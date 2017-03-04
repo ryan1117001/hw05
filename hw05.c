@@ -11,7 +11,14 @@
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
 int main(int argc, char* argv[]){
-  	bool opt_d, opt_h=false;
+  	//argument checking and usage information
+    if (argc == 0) {
+      printf("Usage Information: ./hw05 [-d file_location] [-h] [-t] [-m] <name_of_file>");
+      exit(EXIT_SUCCESS);
+    }
+
+
+    bool opt_d, opt_h=false;
   	char* backLocation="~/backups/";
   	int opt;
   	/*
@@ -19,21 +26,23 @@ int main(int argc, char* argv[]){
   		*/
   	char buffer[EVENT_BUF_LEN];
   	int x, i = 0;
-	char* p;
-	struct inotify_event* event;
+    char* p;
+    struct inotify_event* event;
   	int fd = inotify_init();
-  	if ( fd < 0 ) {
-    printf("inotify init failed\n");
-    exit(EXIT_FAILURE);
+  	
+    if ( fd < 0 ) {
+      printf("inotify init failed\n");
+      exit(EXIT_FAILURE);
+    }
     /*
     fd inisilization
     add watches
     */
-      	while(1){
+    while(1) {
   		x=read(fd, buffer, EVENT_BUF_LEN);
   		if ( x < 0 ) {
     		printf("read failed\n");
-
+        exit(EXIT_FAILURE);
   		}
   		/*
   		for loop for event handling
