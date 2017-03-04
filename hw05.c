@@ -17,12 +17,12 @@ int main(int argc, char* argv[]){
       exit(EXIT_SUCCESS);
     }
 
-    bool opt_d, opt_h=false;
+    bool opt_d = false, opt_h=false, opt_t = false, opt_m = false;
   	char* backLocation="~/backups/";
   	int opt;
-  	/*
-  		getops loop
-  	*/
+
+  	//getopt skeleton
+    
   	char buffer[EVENT_BUF_LEN];
   	int x, wd;
     char* p;
