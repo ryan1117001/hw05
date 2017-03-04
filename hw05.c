@@ -17,35 +17,43 @@ int main(int argc, char* argv[]){
       exit(EXIT_SUCCESS);
     }
 
-
     bool opt_d, opt_h=false;
   	char* backLocation="~/backups/";
   	int opt;
   	/*
   		getops loop
-  		*/
+  	*/
   	char buffer[EVENT_BUF_LEN];
-  	int x, i = 0;
+  	int x, wd;
     char* p;
     struct inotify_event* event;
   	int fd = inotify_init();
   	
+    //INTIAL BACK UP
+
+    //fd inisilization
     if ( fd < 0 ) {
       printf("inotify init failed\n");
       exit(EXIT_FAILURE);
     }
-    /*
-    fd inisilization
-    add watches
-    */
+    wd = inotify_add_watch(fd,argv[1], IN_MODIFY);
+    if (wd == -1) {
+      printf("wd return failure");
+      return(EXIT_FAILURE);
+    }
     while(1) {
   		x=read(fd, buffer, EVENT_BUF_LEN);
   		if ( x < 0 ) {
     		printf("read failed\n");
         exit(EXIT_FAILURE);
   		}
-  		/*
-  		for loop for event handling
-  		*/
+      for (p = buffer; p<buffer+x; ) {
+        event = (struct intoify_event*) p;
+        if ((event->mask & IN_MODIFY) != 0) {
+          //MAKE ANOTHER COPY
+        }
+      }
+      p += sizeof(struct inotify_event) + event->len;
   	}
+    return EXIT_SUCCESS; //will not go through this.
 }
