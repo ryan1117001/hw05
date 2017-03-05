@@ -13,8 +13,8 @@
 
 int main(int argc, char* argv[]){
   	//argument checking and usage information
-    if (argc == 0) {
-      printf("Usage Information: ./hw05 [-d file_location] [-h] [-t] [-m] <name_of_file>");
+    if (argc == 1) {
+      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
       exit(EXIT_SUCCESS);
     }
 
@@ -55,7 +55,12 @@ int main(int argc, char* argv[]){
   		}
 	}
 	if(opt_h){
-		//insert opt h instructions
+		printf("\n\nSYNOPSIS\n%s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
+		printf("%s SOURCE_FILE\n", argv[0]);
+		printf("\nDESCRIPTION\n%s accepts a file name as an argument\n", argv[0]);
+		printf("\nOPTIONS\n-d: assigns the backup file path to the 'file_location' argument string provided\n-h: prints this helpful information\n");
+		printf("-t: appends the duplicatoin time to the file name\n-m disables metadata duplication\n");
+		return EXIT_SUCCESS;
 	}
 	if(opt_t){
 		//insert opt t instructions
