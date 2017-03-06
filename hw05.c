@@ -5,18 +5,24 @@
 #include <string.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <utime.h>
+#include <fcntl.h>
+
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
-#define EVENT_BUF_LEN  ( 1024 * ( EVENT_SIZE + 16 ) )
+#define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 #define DATE_BUFFER_LEN 80
+#define _BSD_SOURCE
+#define UTIME_SIZE (sizeof (struct utimebuf))
 
 int main(int argc, char* argv[]){
   	//argument checking and usage information
     if (argc == 1) {
-      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
+      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
       exit(EXIT_SUCCESS);
     }
 
@@ -24,7 +30,7 @@ int main(int argc, char* argv[]){
   	char* backLocation="~/backups/";
   	int opt=0;
   	char* d_arg=NULL;
-
+  	struct stat s;
   	while((opt = getopt(argc, argv, "d:htm")) != -1){
   		switch(opt) {
   			case 'd':
@@ -45,16 +51,25 @@ int main(int argc, char* argv[]){
   				return EXIT_SUCCESS;
   		}
   	}
-
-  	char* dupFile = argv[optind];
-
+  	char* dupFile;
+  	if(argv[optind]!=NULL){
+  		dupFile = argv[optind];
+  	}
+  	else{
+  		printf("file not specified");
+  	}
   	if(opt_d){
   		//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
   		//checks if d_arg path exists
   		if(access(d_arg, F_OK) != -1 ){
-  			const char* backLocation = d_arg;
-  			printf("Your backup directory is: %s\n", backLocation);
+  			if(stat(d_arg, &s)!=-1){
+  				int mt=s.st_mode;
+  				if(mt& S_IFMT==S_IFDIR){
+  					const char* backLocation = d_arg;
+  					printf("Your backup directory is: %s\n", backLocation);
+  				}
   		}
+  	}
   		else {
   			printf("BAD: Not a valid directory. Your backup folder will default to %s\n", backLocation);
   		}
@@ -69,21 +84,17 @@ int main(int argc, char* argv[]){
 	}
 	if(opt_t){
 		//source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
-		//grabs current time
-		if(argv[optind]==NULL){
-			printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
-			return EXIT_FAILURE;
-		}
-		char buffer[DATE_BUFFER_LEN];
+		
+		char buffer_t[DATE_BUFFER_LEN];
 		time_t now = time(NULL);
 		struct tm *t = localtime(&now);
-		strftime(buffer, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
-		//inputs current time at end of file name
-		dupFile= malloc(strlen(argv[1])+strlen(buffer)+8);
+		strftime(buffer_t, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
+		
+		dupFile= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
 		dupFile[0]= '\0';
 		strcpy(dupFile, argv[optind]);
 		strcat(dupFile, "_");
-		strcat(dupFile, buffer);
+		strcat(dupFile, buffer_t);
 		printf("Your duplicate file is named: %s\n", dupFile);
 	}
 	if(opt_m){
@@ -92,37 +103,72 @@ int main(int argc, char* argv[]){
 
     
   	char buffer[EVENT_BUF_LEN];
-  	int wd, fd = inotify_init();
+  	int x, wd;
     char* p;
     struct inotify_event* event;
-  	ssize_t x;
+  	int fd = inotify_init();
   	
     //INITIAL BACK UP
 
     //fd inisilization
     if ( fd < 0 ) {
       printf("inotify init failed\n");
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
-    wd = inotify_add_watch(fd,argv[1], IN_MODIFY);
+    if(access(argv[optind], R_OK||W_OK||X_OK)==-1){
+    	printf("failure accessing %s",argv[optind]);
+    	exit(EXIT_FAILURE);
+    }
+    strcat(backLocation, dupFile);
+    int t=umask(s.st_mode);
+    x=open(backLocation,O_RDWR , t);
+    if(x==-1){
+    printf("open failed");
+    exit(EXIT_FAILURE);
+    }
+    x=read(wd, backLocation, sizeof(wd));
+    if(x==-1){
+    printf("read/write failed");
+    exit(EXIT_FAILURE);
+    }
+    time_t tmod, tstat;
+    if(stat(dupFile, &s)!=-1){
+    tmod=s.st_mtim.tv_sec;
+    tstat=s.st_ctim.tv_sec;
+    struct utimebuf* buf(tmod,tstat);
+    buf.modtime=tmod;
+    buf.actime=tstat;
+    utime(backLocation,buf);
+}
+    if(x==-1){
+    	printf("read/write failed");
+    	exit(EXIT_FAILURE);
+    }
+    wd = inotify_add_watch(fd,argv[optind], IN_MODIFY);
     if (wd == -1) {
       printf("wd return failure\n");
       return(EXIT_FAILURE);
     }
-    printf("Watch has begun.\n");
+    if (fstat(wd, &s)<0){
+    	printf("stat failure");
+    	exit(EXIT_FAILURE);
+    }
+    
+
     while(1) {
-  		x = read(fd, buffer, EVENT_BUF_LEN);
-  		if ( x <= 0 ) {
+  		x=read(fd, buffer, EVENT_BUF_LEN);
+  		if ( x < 0 ) {
     		printf("read failed\n");
-        return(EXIT_FAILURE);
+        	exit(EXIT_FAILURE);
   		}
       for (p = buffer; p<buffer+x; ) {
         event = (struct inotify_event*) p;
         if ((event->mask & IN_MODIFY) != 0) {
-          
+          //MAKE ANOTHER COPY
         }
-      p += sizeof(struct inotify_event) + event->len;
+        p += sizeof(struct inotify_event) + event->len;
       }
+      
   	}
     return EXIT_SUCCESS; //will not go through this.
 }
