@@ -112,10 +112,10 @@ int main(int argc, char* argv[]){
 
     //fd inisilization
     if ( fd < 0 ) {
-      printf("inotify init failed\n");
-      exit(EXIT_FAILURE);
+      	printf("inotify init failed\n");
+    	exit(EXIT_FAILURE);
     }
-    if(access(argv[optind], R_OK||W_OK||X_OK)==-1){
+    if(access(argv[optind], R_OK)==-1){
     	printf("failure accessing %s",argv[optind]);
     	exit(EXIT_FAILURE);
     }
@@ -123,23 +123,27 @@ int main(int argc, char* argv[]){
     int t=umask(s.st_mode);
     x=open(backLocation,O_RDWR , t);
     if(x==-1){
-    printf("open failed");
-    exit(EXIT_FAILURE);
+    	printf("open failed");
+    	exit(EXIT_FAILURE);
     }
     x=read(wd, backLocation, sizeof(wd));
     if(x==-1){
-    printf("read/write failed");
-    exit(EXIT_FAILURE);
+    	printf("read/write failed");
+    	exit(EXIT_FAILURE);
     }
     time_t tmod, tstat;
     if(stat(dupFile, &s)!=-1){
-    tmod=s.st_mtim.tv_sec;
-    tstat=s.st_ctim.tv_sec;
-    struct utimbuf buf;
-    buf.modtime=tmod;
-    buf.actime=tstat;
-    utime(backLocation,&buf);
-}
+    	tmod=s.st_mtim.tv_sec;
+    	tstat=s.st_ctim.tv_sec;
+    	struct utimbuf buf;
+    	buf.modtime=tmod;
+    	buf.actime=tstat;
+    	utime(backLocation,&buf);
+	}
+	else{
+		printf("time access failure");
+		exit(EXIT_FAILURE);
+	}
     if(x==-1){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
