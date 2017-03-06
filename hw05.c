@@ -7,9 +7,11 @@
 #include <sys/types.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
+#define DATE_BUFFER_LEN 80
 
 int main(int argc, char* argv[]){
   	//argument checking and usage information
@@ -44,11 +46,14 @@ int main(int argc, char* argv[]){
   		}
   	}
 
+  	char* dupFile = argv[optind];
+
   	if(opt_d){
   		//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
+  		//checks if d_arg path exists
   		if(access(d_arg, F_OK) != -1 ){
   			const char* backLocation = d_arg;
-  			printf("Your backup director is: %s\n", backLocation);
+  			printf("Your backup directory is: %s\n", backLocation);
   		}
   		else {
   			printf("BAD: Not a valid directory. Your backup folder will default to %s\n", backLocation);
@@ -63,14 +68,24 @@ int main(int argc, char* argv[]){
 		return EXIT_SUCCESS;
 	}
 	if(opt_t){
-		//insert opt t instructions
+		//source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
+		
+		char buffer[DATE_BUFFER_LEN];
+		time_t now = time(NULL);
+		struct tm *t = localtime(&now);
+		strftime(buffer, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
+		
+		dupFile= malloc(strlen(argv[1])+strlen(buffer)+8);
+		dupFile[0]= '\0';
+		strcpy(dupFile, argv[optind]);
+		strcat(dupFile, "_");
+		strcat(dupFile, buffer);
+		printf("Your duplicate file is named: %s\n", dupFile);
 	}
 	if(opt_m){
 		//instert opt m instructions
 	}
 
-
-  	//getopt skeleton
     
   	char buffer[EVENT_BUF_LEN];
   	int x, wd;
