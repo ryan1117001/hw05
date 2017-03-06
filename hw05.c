@@ -135,10 +135,10 @@ int main(int argc, char* argv[]){
     if(stat(dupFile, &s)!=-1){
     tmod=s.st_mtim.tv_sec;
     tstat=s.st_ctim.tv_sec;
-    struct utimebuf* buf(tmod,tstat);
+    struct utimbuf buf;
     buf.modtime=tmod;
     buf.actime=tstat;
-    utime(backLocation,buf);
+    utime(backLocation,&buf);
 }
     if(x==-1){
     	printf("read/write failed");
