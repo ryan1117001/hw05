@@ -69,12 +69,16 @@ int main(int argc, char* argv[]){
 	}
 	if(opt_t){
 		//source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
-		
+		//grabs current time
+		if(argv[optind]==NULL){
+			printf("This program requires a file name as an argument.\n");
+			return EXIT_FAILURE;
+		}
 		char buffer[DATE_BUFFER_LEN];
 		time_t now = time(NULL);
 		struct tm *t = localtime(&now);
 		strftime(buffer, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
-		
+		//inputs current time at end of file name
 		dupFile= malloc(strlen(argv[1])+strlen(buffer)+8);
 		dupFile[0]= '\0';
 		strcpy(dupFile, argv[optind]);
