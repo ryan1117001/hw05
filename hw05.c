@@ -10,13 +10,13 @@
 #include <time.h>
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
-#define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
+#define EVENT_BUF_LEN  ( 1024 * ( EVENT_SIZE + 16 ) )
 #define DATE_BUFFER_LEN 80
 
 int main(int argc, char* argv[]){
   	//argument checking and usage information
     if (argc == 1) {
-      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
+      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
       exit(EXIT_SUCCESS);
     }
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]){
 		//source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
 		//grabs current time
 		if(argv[optind]==NULL){
-			printf("This program requires a file name as an argument.\n");
+			printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
 			return EXIT_FAILURE;
 		}
 		char buffer[DATE_BUFFER_LEN];
@@ -92,36 +92,37 @@ int main(int argc, char* argv[]){
 
     
   	char buffer[EVENT_BUF_LEN];
-  	int x, wd;
+  	int wd, fd = inotify_init();
     char* p;
     struct inotify_event* event;
-  	int fd = inotify_init();
+  	ssize_t x;
   	
     //INITIAL BACK UP
 
     //fd inisilization
     if ( fd < 0 ) {
       printf("inotify init failed\n");
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     wd = inotify_add_watch(fd,argv[1], IN_MODIFY);
     if (wd == -1) {
       printf("wd return failure\n");
       return(EXIT_FAILURE);
     }
+    printf("Watch has begun.\n");
     while(1) {
-  		x=read(fd, buffer, EVENT_BUF_LEN);
-  		if ( x < 0 ) {
+  		x = read(fd, buffer, EVENT_BUF_LEN);
+  		if ( x <= 0 ) {
     		printf("read failed\n");
-        exit(EXIT_FAILURE);
+        return(EXIT_FAILURE);
   		}
       for (p = buffer; p<buffer+x; ) {
         event = (struct inotify_event*) p;
         if ((event->mask & IN_MODIFY) != 0) {
-          //MAKE ANOTHER COPY
+          
         }
-      }
       p += sizeof(struct inotify_event) + event->len;
+      }
   	}
     return EXIT_SUCCESS; //will not go through this.
 }
