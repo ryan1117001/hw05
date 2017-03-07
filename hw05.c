@@ -102,6 +102,13 @@ int main(int argc, char* argv[]){
 	if(opt_m){
 		//instert opt m instructions
 	}
+
+  if (opt_t == false) {
+    char rename[] = "_rev0";
+    strcpy(dupFile,argv[optind]);
+    strcat(dupFile,rename);
+    printf("Name of file is: %s\n", dupFile);
+  }
 	if(access(backLocation, F_OK) == -1){
 		if(mkdir(backLocation, )==-1){
 			printf("cant make directory\n");
