@@ -12,6 +12,7 @@
 #include <utime.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <errno.h>
 
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]){
     }
     bool opt_d = false, opt_h=false, opt_t = false, opt_m = false;
   	char* backLocation=malloc(1024);
-  	strcpy(backLocation, "~/backup/");
+  	strcpy(backLocation, "/home/kofi/backup/");
   	int opt=0;
   	char* d_arg=NULL;
   	struct stat s;
@@ -110,8 +111,8 @@ int main(int argc, char* argv[]){
     printf("Name of file is: %s\n", dupFile);
   }
 	if(access(backLocation, F_OK) == -1){
-		if(mkdir(backLocation, )==-1){
-			printf("cant make directory\n");
+		if(mkdir(backLocation, S_IRWXU)==-1){
+			printf("cant make directory%s\n", backLocation );
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -134,35 +135,43 @@ int main(int argc, char* argv[]){
     	printf("failure accessing %s",argv[optind]);
     	exit(EXIT_FAILURE);
     }
+    if(stat(dupFile, &s)!=-1){
     printf("%s\n",pathEnd);
     strcat(backLocation, pathEnd);
     printf("%s\n", backLocation);
-    int t=umask(s.st_mode);
-    x=open(backLocation, O_RDWR||O_CREAT , t);
+    //int t=umask(s.st_mode);
+    }
+    else{
+      printf("%d\n",errno );
+    }
+    x=open(backLocation, O_RDWR|O_CREAT , s.st_mode);
     if(x==-1){
-    	printf("open failed");
+      char* ster=strerror(errno);
+    	printf("open failed%s\n", ster);
     	exit(EXIT_FAILURE);
     }
-    printf("yah\n");
-    x=read(wd, backLocation, sizeof(wd));
+    //printf("yah\n");
+    if(read(x, backLocation, sizeof(backLocation))==-1){
+        printf("write failed\n");
+        exit(EXIT_FAILURE);
+    }
+    fflush(NULL);
     if(x==-1){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
     }
     time_t tmod, tstat;
     printf("YAH");
-    if(stat(dupFile, &s)!=-1){
+    
     	tmod=s.st_mtim.tv_sec;
     	tstat=s.st_ctim.tv_sec;
     	struct utimbuf buf;
     	buf.modtime=tmod;
     	buf.actime=tstat;
     	utime(backLocation,&buf);
-	}
-	else{
+	
 		printf("time access failure");
 		exit(EXIT_FAILURE);
-	}
 	printf("almost there");
     if(x==-1){
     	printf("read/write failed");
