@@ -66,7 +66,7 @@ int main(int argc, char* argv[]){
   	char* backLocation=malloc(1024);
     char* temp=getenv("HOME");
   	strcpy(backLocation, temp);
-    strcat(backLocation, "/backup/");
+    strcat(backLocation, "/backup");
   printf("%s\n", backLocation );
   	int opt=0;
   	char* d_arg=NULL;
@@ -99,6 +99,7 @@ int main(int argc, char* argv[]){
   		printf("file not specified");
   		exit(EXIT_FAILURE);
   	}
+    const char* backLocation;
   	if(opt_d){
   		//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
   		//checks if d_arg path exists
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]){
   			if(stat(d_arg, &s)!=-1){
   				int mt=s.st_mode;
   				if(mt& S_IFMT==S_IFDIR){
-  					const char* backLocation = d_arg;
+  					backLocation = d_arg;
   					printf("Your backup directory is: %s\n", backLocation);
   				}
   		  }
