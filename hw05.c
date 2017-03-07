@@ -21,18 +21,21 @@
 #define _BSD_SOURCE
 #define UTIME_SIZE (sizeof (struct utimebuf))
 
-char* rev_rename(int count,int optind, char* argv[]) {
+char* rev_rename(int count,int optind, char* argv[],char* backlocal ) {
     //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
     //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
-    char* temp=basename(argv[optind]);
+    char* temp1; 
+    char* temp2 = basename(argv[optind]);
     char countbuf[10];
     sprintf(countbuf,"%d",count);
     
-    temp= malloc(strlen(argv[optind])+strlen(countbuf)+8);
-    temp[0] = '\0';
-    strcat(temp,"_rev");
-    strcat(temp,countbuf);
-    return temp;
+    temp1 = malloc(strlen(argv[optind])+strlen(countbuf)+8);
+    temp1[0] = '\0';
+    strcat(temp1,backlocal);
+    strcat(temp1,temp2);
+    strcat(temp1,"_rev");
+    strcat(temp1,countbuf);
+    return temp1;
 }
 
 char* time_rename(int optind, char* argv[]) {
@@ -45,7 +48,7 @@ char* time_rename(int optind, char* argv[]) {
     
     temp= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
     temp[0]= '\0';
-    strcpy(temp, argv[optind]);
+    temp=basename(argv[optind]);
     strcat(temp, "_");
     strcat(temp, buffer_t);
     return temp;
@@ -116,19 +119,6 @@ int main(int argc, char* argv[]){
   		return EXIT_SUCCESS;
   	}
   	if(opt_t){
-  		//source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
-  		/*
-  		char buffer_t[DATE_BUFFER_LEN];
-  		time_t now = time(NULL);
-  		struct tm *t = localtime(&now);
-  		strftime(buffer_t, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
-  		
-  		dupFile= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
-  		dupFile[0]= '\0';
-  		strcpy(dupFile, argv[optind]);
-  		strcat(dupFile, "_");
-  		strcat(dupFile, buffer_t);
-  		printf("Your duplicate file is named: %s\n", dupFile);*/
       dupFile = time_rename(optind,argv);
       printf("Your duplicate file is named: %s\n", dupFile);
   	}
@@ -138,7 +128,7 @@ int main(int argc, char* argv[]){
 
     if (opt_t == false) {
       printf("Default rename will be rev\n");
-      dupFile = rev_rename(0,optind,argv);
+      dupFile = rev_rename(0,optind,argv,backLocation);
       printf("Backup file name: %s\n", dupFile);
     }
   	if(access(backLocation, F_OK) == -1){
@@ -236,7 +226,7 @@ int main(int argc, char* argv[]){
           //add 1 for each new copy of backup where
           //rename is necessary
           if (opt_t == false) {
-            dupFile = rev_rename(rev_num,optind,argv);
+            //dupFile = rev_rename(rev_num,optind,argv);
             rev_num++;
           }
           else { //createse a new copy of back with new time stamp
