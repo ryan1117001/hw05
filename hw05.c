@@ -21,14 +21,17 @@
 #define _BSD_SOURCE
 #define UTIME_SIZE (sizeof (struct utimebuf))
 
-char* rev_rename(int count, char* dupFile){
+char* rev_rename(int count,int optind, char* argv[]){
     //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
+    //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
+    char* temp;
     char countbuf[10];
     sprintf(countbuf,"%d",count);
     char rename[] = "_rev";
-    strcat(dupFile,rename);
-    strcat(dupFile,countbuf);
-    return dupFile;
+    strcpy(temp,argv[optind]);
+    strcat(temp,rename);
+    strcat(temp,countbuf);
+    return temp;
 }
 
 int main(int argc, char* argv[]){
@@ -115,13 +118,9 @@ int main(int argc, char* argv[]){
 	}
 
   if (opt_t == false) {
-    //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
-    /*char rename[] = "_rev";
-    strcat(dupFile,rename);
-    strcat(dupFile,"0");
-    printf("Name of file is: %s\n", dupFile);*/
-    dupFile = rev_rename(0,dupFile);
-    printf("Name of file is: %s\n", dupFile);
+    printf("Default rename will be rev\n");
+    dupFile = rev_rename(0,optind,argv);
+    printf("Backup file name: %s\n", dupFile);
   }
 	if(access(backLocation, F_OK) == -1){
 		if(mkdir(backLocation, S_IRWXU)==-1){
@@ -141,7 +140,7 @@ int main(int argc, char* argv[]){
 
     //fd inisilization
     if ( fd < 0 ) {
-      	printf("inotify init failed\n");
+      printf("inotify init failed\n");
     	exit(EXIT_FAILURE);
     }
     if(access(argv[optind], R_OK)==-1){
@@ -218,8 +217,9 @@ int main(int argc, char* argv[]){
           //rename is necessary
           bool copy_rename = false;
           while(copy_rename == false){
-            rev_rename(rev_num,dupFile);
+            dupFile = rev_rename(rev_num,optind,argv);
             rev_num++;
+            copy_rename = true;
           }
         }
         p += sizeof(struct inotify_event) + event->len;
