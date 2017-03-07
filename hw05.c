@@ -160,13 +160,13 @@ int main(int argc, char* argv[]){
     	exit(EXIT_FAILURE);
     }
     if(stat(argv[optind], &s)!=-1){
-    printf("%sgrgrwfef\n",pathEnd);
     strcat(backLocation, pathEnd);
     printf("%s\n", backLocation);
     //int t=umask(s.st_mode);
     }
     else{
       printf("%d\n",errno );
+      exit(EXIT_FAILURE);
     }
     printf("%s\n",backLocation );
     x=open(backLocation, O_RDWR|O_CREAT , s.st_mode);
