@@ -24,13 +24,12 @@
 char* rev_rename(int count,int optind, char* argv[]) {
     //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
     //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
-    char* temp;
+    char* temp=basename(argv[optind]);
     char countbuf[10];
     sprintf(countbuf,"%d",count);
-
+    
     temp= malloc(strlen(argv[optind])+strlen(countbuf)+8);
     temp[0] = '\0';
-    strcpy(temp,argv[optind]);
     strcat(temp,"_rev");
     strcat(temp,countbuf);
     return temp;
@@ -150,6 +149,7 @@ int main(int argc, char* argv[]){
   	}
   	char* pathEnd;
     pathEnd=basename(dupFile);
+    printf("%s\n", pathEnd);
     char buffer[EVENT_BUF_LEN];
     int x, wd, fd = inotify_init();;
     char* p;
@@ -166,8 +166,8 @@ int main(int argc, char* argv[]){
     	printf("failure accessing %s",argv[optind]);
     	exit(EXIT_FAILURE);
     }
-    if(stat(dupFile, &s)!=-1){
-    printf("%s\n",pathEnd);
+    if(stat(argv[optind], &s)!=-1){
+    printf("%sgrgrwfef\n",pathEnd);
     strcat(backLocation, pathEnd);
     printf("%s\n", backLocation);
     //int t=umask(s.st_mode);
@@ -175,6 +175,7 @@ int main(int argc, char* argv[]){
     else{
       printf("%d\n",errno );
     }
+    printf("%s\n",backLocation );
     x=open(backLocation, O_RDWR|O_CREAT , s.st_mode);
     if(x==-1){
       char* ster=strerror(errno);
