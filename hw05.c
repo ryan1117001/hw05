@@ -158,6 +158,7 @@ int main(int argc, char* argv[]){
       printf("inotify init failed\n");
     	exit(EXIT_FAILURE);
     }
+    wd=open(argv[optind],O_RDONLY);
     if(access(argv[optind], R_OK)==-1){
     	printf("failure accessing %s\n",argv[optind]);
     	exit(EXIT_FAILURE);
@@ -179,12 +180,14 @@ int main(int argc, char* argv[]){
     	exit(EXIT_FAILURE);
     }
     //printf("yah\n");
-    if(read(x, backLocation, sizeof(backLocation))==-1){
-        printf("write failed\n");
-        exit(EXIT_FAILURE);
+    char writer[100];
+    ssize_t n;
+    while(n=read(wd,writer,50)){
+        write(x,writer,n);
+        printf("..writing..\n");
     }
     fflush(NULL);
-    if(x==-1){
+    if(n==-1){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
     }
@@ -196,10 +199,11 @@ int main(int argc, char* argv[]){
     struct utimbuf buf;
     buf.modtime=tmod;
     buf.actime=tstat;
-    utime(backLocation,&buf);
-	
+    
+	 if(utime(backLocation,&buf)==-1){
 		printf("time access failure");
 		exit(EXIT_FAILURE);
+    }
 	  printf("almost there");
     if(x==-1){
     	printf("read/write failed");
