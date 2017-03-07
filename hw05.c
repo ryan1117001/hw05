@@ -11,6 +11,7 @@
 #include <time.h>
 #include <utime.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
@@ -25,9 +26,9 @@ int main(int argc, char* argv[]){
       printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
       exit(EXIT_SUCCESS);
     }
-
     bool opt_d = false, opt_h=false, opt_t = false, opt_m = false;
-  	char* backLocation="~/backups/";
+  	char* backLocation=malloc(1024);
+  	strcpy(backLocation, "~/backup/");
   	int opt=0;
   	char* d_arg=NULL;
   	struct stat s;
@@ -57,6 +58,7 @@ int main(int argc, char* argv[]){
   	}
   	else{
   		printf("file not specified");
+  		exit(EXIT_FAILURE);
   	}
   	if(opt_d){
   		//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
@@ -100,8 +102,14 @@ int main(int argc, char* argv[]){
 	if(opt_m){
 		//instert opt m instructions
 	}
-
-    
+	if(access(backLocation, F_OK) == -1){
+		if(mkdir(backLocation, )==-1){
+			printf("cant make directory\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	char* pathEnd;
+    pathEnd=basename(dupFile);
   	char buffer[EVENT_BUF_LEN];
   	int x, wd;
     char* p;
@@ -119,19 +127,23 @@ int main(int argc, char* argv[]){
     	printf("failure accessing %s",argv[optind]);
     	exit(EXIT_FAILURE);
     }
-    strcat(backLocation, dupFile);
+    printf("%s\n",pathEnd);
+    strcat(backLocation, pathEnd);
+    printf("%s\n", backLocation);
     int t=umask(s.st_mode);
-    x=open(backLocation,O_RDWR , t);
+    x=open(backLocation, O_RDWR||O_CREAT , t);
     if(x==-1){
     	printf("open failed");
     	exit(EXIT_FAILURE);
     }
+    printf("yah\n");
     x=read(wd, backLocation, sizeof(wd));
     if(x==-1){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
     }
     time_t tmod, tstat;
+    printf("YAH");
     if(stat(dupFile, &s)!=-1){
     	tmod=s.st_mtim.tv_sec;
     	tstat=s.st_ctim.tv_sec;
@@ -144,6 +156,7 @@ int main(int argc, char* argv[]){
 		printf("time access failure");
 		exit(EXIT_FAILURE);
 	}
+	printf("almost there");
     if(x==-1){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
@@ -153,6 +166,7 @@ int main(int argc, char* argv[]){
       printf("wd return failure\n");
       return(EXIT_FAILURE);
     }
+    printf("just a bit further....");
     if (fstat(wd, &s)<0){
     	printf("stat failure");
     	exit(EXIT_FAILURE);
