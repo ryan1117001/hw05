@@ -47,8 +47,8 @@ char* time_rename(int optind, char* argv[], char* backlocal) {
     struct tm *t = localtime(&now);
     strftime(buffer_t, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
     
-    temp= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
-    temp[0]= '\0';
+    temp1= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
+    temp1[0]= '\0';
     strcpy(temp1, backlocal);
     strcat(temp1, temp2);
     strcat(temp1, "_");
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]){
   	char* backLocation=malloc(1024);
     char* temp=getenv("HOME");
   	strcpy(backLocation, temp);
-    strcat(backLocation, "/backup");
+    strcat(backLocation, "/backup/");
   printf("%s\n", backLocation );
   	int opt=0;
   	char* d_arg=NULL;
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]){
   		printf("file not specified");
   		exit(EXIT_FAILURE);
   	}
-    const char* backLocation;
+  
   	if(opt_d){
   		//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
   		//checks if d_arg path exists
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]){
   			if(stat(d_arg, &s)!=-1){
   				int mt=s.st_mode;
   				if(mt& S_IFMT==S_IFDIR){
-  					backLocation = d_arg;
+  					const char* backLocation = d_arg;
   					printf("Your backup directory is: %s\n", backLocation);
   				}
   		  }
