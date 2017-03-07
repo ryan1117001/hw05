@@ -38,9 +38,10 @@ char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
     return temp1;
 }
 
-char* time_rename(int optind, char* argv[]) {
+char* time_rename(int optind, char* argv[], char* backlocal) {
     //source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
-    char* temp;
+    char* temp1;
+    char* temp2 = basename(argv[optind]);
     char buffer_t[DATE_BUFFER_LEN];
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
@@ -48,10 +49,11 @@ char* time_rename(int optind, char* argv[]) {
     
     temp= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
     temp[0]= '\0';
-    strcpy(temp, argv[optind]);
-    strcat(temp, "_");
-    strcat(temp, buffer_t);
-    return temp;
+    strcpy(temp1, backlocal);
+    strcat(temp1, temp2);
+    strcat(temp1, "_");
+    strcat(temp1, buffer_t);
+    return temp1;
 }
 
 int main(int argc, char* argv[]){
@@ -122,7 +124,7 @@ int main(int argc, char* argv[]){
   		return EXIT_SUCCESS;
   	}
   	if(opt_t){
-      dupFile = time_rename(optind,argv);
+      dupFile = time_rename(optind,argv,backLocation);
       printf("Your duplicate file is named: %s\n", dupFile);
   	}
   	if(opt_m){
@@ -156,7 +158,7 @@ int main(int argc, char* argv[]){
     	exit(EXIT_FAILURE);
     }
     if(access(argv[optind], R_OK)==-1){
-    	printf("failure accessing %s",argv[optind]);
+    	printf("failure accessing %s\n",argv[optind]);
     	exit(EXIT_FAILURE);
     }
     if(stat(argv[optind], &s)!=-1){
@@ -229,11 +231,11 @@ int main(int argc, char* argv[]){
           //add 1 for each new copy of backup where
           //rename is necessary
           if (opt_t == false) {
-            //dupFile = rev_rename(rev_num,optind,argv);
+            dupFile = rev_rename(rev_num,optind,argv,backLocation);
             rev_num++;
           }
           else { //createse a new copy of back with new time stamp
-            dupFile = time_rename(optind,argv);
+            dupFile = time_rename(optind,argv,backLocation);
           }
 
           }
