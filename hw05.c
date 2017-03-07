@@ -64,7 +64,7 @@ int main(int argc, char* argv[]){
   	char* backLocation=malloc(1024);
     char* temp=getenv("HOME");
   	strcpy(backLocation, temp);
-    strcat(backLocation, "/backup");
+    strcat(backLocation, "/backup/");
   printf("%s\n", backLocation );
   	int opt=0;
   	char* d_arg=NULL;
