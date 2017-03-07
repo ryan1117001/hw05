@@ -21,6 +21,16 @@
 #define _BSD_SOURCE
 #define UTIME_SIZE (sizeof (struct utimebuf))
 
+char* rev_rename(int count, char* dupFile){
+    //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
+    char countbuf[10];
+    sprintf(countbuf,"%d",count);
+    char rename[] = "_rev";
+    strcat(dupFile,rename);
+    strcat(dupFile,countbuf);
+    return dupFile;
+}
+
 int main(int argc, char* argv[]){
   	//argument checking and usage information
     if (argc == 1) {
@@ -105,9 +115,12 @@ int main(int argc, char* argv[]){
 	}
 
   if (opt_t == false) {
-    char rename[] = "_rev0";
-    strcpy(dupFile,argv[optind]);
+    //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
+    /*char rename[] = "_rev";
     strcat(dupFile,rename);
+    strcat(dupFile,"0");
+    printf("Name of file is: %s\n", dupFile);*/
+    dupFile = rev_rename(0,dupFile);
     printf("Name of file is: %s\n", dupFile);
   }
 	if(access(backLocation, F_OK) == -1){
@@ -195,10 +208,19 @@ int main(int argc, char* argv[]){
     		printf("read failed\n");
         	exit(EXIT_FAILURE);
   		}
+      int rev_num = 1;
       for (p = buffer; p<buffer+x; ) {
         event = (struct inotify_event*) p;
         if ((event->mask & IN_MODIFY) != 0) {
           //MAKE ANOTHER COPY
+
+          //while loop for each new copy of backup where
+          //rename is necessary
+          bool copy_rename = false;
+          while(copy_rename == false){
+            rev_rename(rev_num,dupFile);
+            rev_num++;
+          }
         }
         p += sizeof(struct inotify_event) + event->len;
       }
