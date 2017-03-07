@@ -27,7 +27,7 @@ char* rev_rename(int count,int optind, char* argv[]) {
     char* temp=basename(argv[optind]);
     char countbuf[10];
     sprintf(countbuf,"%d",count);
-    
+
     temp= malloc(strlen(argv[optind])+strlen(countbuf)+8);
     temp[0] = '\0';
     strcat(temp,"_rev");
@@ -59,7 +59,10 @@ int main(int argc, char* argv[]){
     }
     bool opt_d = false, opt_h=false, opt_t = false, opt_m = false;
   	char* backLocation=malloc(1024);
-  	strcpy(backLocation, "/home/kofi/backup/");
+    char* temp=getenv("HOME");
+  	strcpy(backLocation, temp);
+    strcat(backLocation, "/backup");
+  printf("%s\n", backLocation );
   	int opt=0;
   	char* d_arg=NULL;
   	struct stat s;
