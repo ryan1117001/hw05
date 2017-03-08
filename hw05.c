@@ -194,9 +194,6 @@ int main(int argc, char* argv[]){
       }
     }
 
-    //checking for file
-    
-
     //backup initials
     struct stat s;
     char* backLocation=malloc(1024);
