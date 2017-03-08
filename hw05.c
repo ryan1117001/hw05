@@ -20,6 +20,7 @@
 #define _BSD_SOURCE
 #define UTIME_SIZE (sizeof (struct utimebuf))
 
+//adds _rev to create a new backfile name
 char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
     //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
     //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
@@ -28,7 +29,7 @@ char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
     char* countbuf= malloc(100);
     sprintf(countbuf,"%d",count);
     
-    //temp1[0] = '\0';
+    //concatenate strings to create name
     strcat(temp1,backlocal);
     strcat(temp1,temp2);
     strcat(temp1,"_rev");
@@ -36,6 +37,8 @@ char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
     return temp1;
 }
 
+//adds current time to the end of file
+//source: PowerPoint Lecture 16
 char* time_rename(int optind, char* argv[], char* backlocal) {
     //source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
     char* temp1;
@@ -47,6 +50,7 @@ char* time_rename(int optind, char* argv[], char* backlocal) {
     
     temp1= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
     temp1[0]= '\0';
+    //concatenate strings to add time
     strcpy(temp1, backlocal);
     strcat(temp1, temp2);
     strcat(temp1, "_");
@@ -55,43 +59,46 @@ char* time_rename(int optind, char* argv[], char* backlocal) {
 }
 
 //purely coping a file and its contents
-//source: https://www.codingunit.com/c-tutorial-copying-a-file-in-c
+//source: PowerPoint Lecture 16
 int copy_file(int optind, char* argv[], char  *copy) {
     int wd, x;
     struct stat s;
-    wd=open(argv[optind],O_RDONLY);
-    if(access(argv[optind], R_OK)==-1){
+    wd=open(argv[optind],O_RDONLY); //used to read the orginal file
+    if(access(argv[optind], R_OK)==-1) { //checks if file is acessible
       printf("failure accessing %s\n",argv[optind]);
       exit(EXIT_FAILURE);
     }
-    if(stat(argv[optind], &s)==-1){
+    if(stat(argv[optind], &s)==-1){ //checks for stat
       printf("stat error");
       exit(EXIT_FAILURE);
     }
     //printf("%s\n",copy);
-    x=open(copy, O_RDWR|O_CREAT , s.st_mode);
-    if(x==-1){
+    x=open(copy, O_RDWR|O_CREAT , s.st_mode); //used to open and appned to new file 
+    if(x==-1){ //open error checking
       char* ster=strerror(errno);
       printf("open failed%s\n", ster);
       exit(EXIT_FAILURE);
     }
-    char writer[100];
+    char writer[100]; //buffer to push content into new file
     ssize_t n;
     while(n=read(wd,writer,50)){
         write(x,writer,n);
         printf("..writing..\n");
     }
-    fflush(NULL);
-    if(n==-1){
+    fflush(NULL); //cleans out
+    if(n==-1){ //checks for read/write 
       printf("read/write failed\n");
       exit(EXIT_FAILURE);
     }
+    //closes files to allow for reuse
     close(wd);
     close(x);
 
     return 0;
 }
 
+//changes the time timestamp of the new file to be the same as the old
+//source: PowerPoint Lecture 16
 void timestamp(int optind, char* argv[], char* copy) {
     //timestamp change initial
     time_t tmod, tstat;
@@ -104,44 +111,50 @@ void timestamp(int optind, char* argv[], char* copy) {
     tmod = s.st_mtim.tv_sec; //modify time initialized
     tstat = s.st_ctim.tv_sec; //access time initialized
     struct utimbuf buf;
-    buf.modtime=tmod;
-    buf.actime=tstat;
+    //changes the time the buffer holds
+    buf.modtime = tmod;
+    buf.actime = tstat;
 
-    if(utime(copy,&buf)==-1){
+    if(utime(copy,&buf)==-1) { //checks for error and copies it over
       printf("time access failure\n");
       exit(EXIT_FAILURE);
     }
 }
 
 //changes ownership
+//source: PowerPoint Lecture 16
 void ownership(int optind, char* argv[], char* copy) {
+    //initials for attribute checking and changing
     struct stat s;
     uid_t owner;
     gid_t group;
 
-    if(stat(argv[optind],&s) == -1) {
+    if(stat(argv[optind],&s) == -1) { //checks for stat error
       printf("stat error");
       exit(EXIT_FAILURE);
     }
+    //sets the user/group name to variables
     owner = s.st_uid;
     group = s.st_gid;
-    if (chown(copy,owner,group) == -1) {
+    if (chown(copy,owner,group) == -1) { //changes the owner and group
       printf("change owner error");
       exit(EXIT_FAILURE);
     }
 }
 
 //changes permissions
+//source: PowerPoint Lecture 16
 void perm(int optind, char* argv[], char* copy) {
+  //initial stat and permission holder variable
   struct stat s;
   mode_t mode;
 
-  if (stat(argv[optind],&s) == -1) {
+  if (stat(argv[optind],&s) == -1) { //checks for stat error
       printf("stat error");
       exit(EXIT_FAILURE);
      }
-     mode = s.st_mode;
-  if (chmod(copy,mode) == -1) {
+     mode = s.st_mode; //sets mode to permission bits
+  if (chmod(copy,mode) == -1) { //changes the the permisions to be the same and checks for error
     printf("permission error");
     exit(EXIT_FAILURE);
   }
@@ -159,6 +172,7 @@ int main(int argc, char* argv[]){
     int opt=0;
     char* d_arg=NULL;
 
+    //getopt that changes the boolean flag
     while((opt = getopt(argc, argv, "d:htm")) != -1){
       switch(opt) {
         case 'd':
@@ -226,47 +240,48 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
       }
     }
-    //name of the back up file
-
+    //naming of the back up file
     char* pathEnd;
     char* backFile=malloc(1024);
     if(argv[optind]!=NULL){
       pathEnd=basename(argv[optind]);
     }
-    else{
+    else{ //if null, argument was not there or usable
       printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
       exit(EXIT_FAILURE);
     }
-    
+    //attaches the original file name (not path) to new backup file
     backFile=strcpy(backFile, backLocation);
     strcat(backFile, pathEnd);
     //printf("%s\n",argv[optind]);
     //printf("%s\n",backFile);
+
+    //concatenate the time to the end if true
     if(opt_t == true) {
         backFile = time_rename(optind,argv,backLocation);
-        printf("Your duplicate file is named: %s\n", backFile);
+        printf("Backup file name: %s\n", backFile);
     }
+    //concatenate the rev to the end if false
     if (opt_t == false) {
-        printf("Default rename will be rev\n");
         printf("%s\n", backLocation);
         backFile = rev_rename(0,optind,argv,backLocation);
         printf("Backup file name: %s\n", backFile);
     }
     //initial copy of file
+    //copies file and ideally returns 0 when successful
     if (copy_file(optind,argv,backFile) != 0) {
       printf("copy error\n");
       return EXIT_FAILURE;
     }
 
-    if(!opt_m){
+    //backup file exists so metadata can be copied
+    if(!opt_m){ //default false, will copy metadata
       printf("Metdata on\n");
       timestamp(optind,argv,backFile);
       ownership(optind,argv,backFile);
       perm(optind,argv,backFile);
     }
-    else printf("Metadata off\n");
-
-    printf("The program has begun\n");
+    else printf("Metadata off\n"); //if true, metadata is not copied
 
   int fd,wd;
   struct inotify_event *event;
@@ -281,6 +296,7 @@ int main(int argc, char* argv[]){
     printf("fd returned -1\n");
     return EXIT_FAILURE;
   }
+  //watch added on original file to see if it is deleted or written on
   wd = inotify_add_watch(fd,argv[optind], IN_DELETE_SELF | IN_CLOSE_WRITE);
   if (wd == -1) {
     printf("wd returned failure\n");
@@ -288,7 +304,9 @@ int main(int argc, char* argv[]){
   }
   int count = 1;
   //loop forever to read events
+  printf("Watch has begun\n"); //simply tells user that watch has begun
   for (;;) {
+    //buffer to read the event
     numRead = read(fd,buf,EVENT_BUF_LEN);
     if (numRead <= 0) {
       printf("read error\n");
@@ -296,32 +314,29 @@ int main(int argc, char* argv[]){
     }
     for (p = buf; p<buf+numRead;) {
       event = (struct inotify_event*) p; //casting event to p pointer into buffer
-      if ((event->mask & IN_DELETE_SELF) != 0) {
+      if ((event->mask & IN_DELETE_SELF) != 0) { //when deleted file, stops watching and exits
           printf("File Deleted\n");
           return EXIT_SUCCESS;
       }
-      if ((event->mask & IN_CLOSE_WRITE) != 0) {
-        printf("File Modified\n");
-        printf("%s %s\n", backFile, backLocation);
-        if (opt_t == true) {
-          //dupFile=strcpy(dupFile, backLocation);
+      if ((event->mask & IN_CLOSE_WRITE) != 0) { //when file is written upon, enters loop
+        printf("File Modified, copy will be made\n"); 
+        if (opt_t == true) { //renames file with a new time
           backFile = time_rename(optind, argv, backLocation);
         }
-        else {
-          //dupFile=strcpy(dupFile, backLocation);
+        else { //renames file with new rev number
           backFile = rev_rename(count,optind,argv, backLocation);
           count++;
         }
-        copy_file(optind,argv,backFile);
-        if (!opt_m) {
+        copy_file(optind,argv,backFile); //copies the content to a new file
+        if (!opt_m) { //copies the metadata again
           timestamp(optind,argv,backFile);
           ownership(optind,argv,backFile);
           perm(optind,argv,backFile);
         }
       }
-      p += sizeof(struct inotify_event) + event->len;
+      p += sizeof(struct inotify_event) + event->len; //moves the buffer along
     }
   }
-    return EXIT_SUCCESS;
+    return EXIT_SUCCESS; //will not get here
 }
 
