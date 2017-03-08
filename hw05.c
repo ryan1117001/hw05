@@ -281,7 +281,7 @@ int main(int argc, char* argv[]){
     printf("fd returned -1\n");
     return EXIT_FAILURE;
   }
-  wd = inotify_add_watch(fd,argv[optind], IN_DELETE_SELF | IN_MODIFY);
+  wd = inotify_add_watch(fd,argv[optind], IN_DELETE_SELF | IN_CLOSE_WRITE);
   if (wd == -1) {
     printf("wd returned failure\n");
     return EXIT_FAILURE;
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]){
           printf("File Deleted\n");
           return EXIT_SUCCESS;
       }
-      if ((event->mask & IN_MODIFY) != 0) {
+      if ((event->mask & IN_CLOSE_WRITE) != 0) {
         printf("File Modified\n");
         printf("%s %s\n", backFile, backLocation);
         if (opt_t == true) {
