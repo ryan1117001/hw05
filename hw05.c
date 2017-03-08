@@ -163,17 +163,18 @@ int main(int argc, char* argv[]){
     	printf("failure accessing %s\n",argv[optind]);
     	exit(EXIT_FAILURE);
     }
-    if(stat(argv[optind], &s)!=-1){
-    strcat(backLocation, pathEnd);
-    printf("%s\n", backLocation);
+      char* backFile= malloc(1024);
+      strcpy(backFile, backLocation);
+      strcat(backFile, pathEnd);
+    if(stat(argv[optind], &s)==-1){
+      
+      
+      printf("%s\n", backLocation);
+      exit(EXIT_FAILURE);
     //int t=umask(s.st_mode);
     }
-    else{
-      printf("%d\n",errno );
-      exit(EXIT_FAILURE);
-    }
-    printf("%s\n",backLocation );
-    x=open(backLocation, O_RDWR|O_CREAT , s.st_mode);
+    printf("%s\n",backFile );
+    x=open(backFile, O_RDWR|O_CREAT , s.st_mode);
     if(x==-1){
       char* ster=strerror(errno);
     	printf("open failed%s\n", ster);
@@ -199,8 +200,8 @@ int main(int argc, char* argv[]){
     struct utimbuf buf;
     buf.modtime=tmod;
     buf.actime=tstat;
-    
-	 if(utime(backLocation,&buf)==-1){
+    printf("%ld\n", buf.actime);
+	 if(utime(backFile,&buf)==-1){
 		printf("time access failure");
 		exit(EXIT_FAILURE);
     }
@@ -209,7 +210,7 @@ int main(int argc, char* argv[]){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
     }
-    wd = inotify_add_watch(fd,argv[optind], IN_MODIFY);
+    n = inotify_add_watch(fd,argv[optind], IN_MODIFY|IN_DELETE_SELF);
     if (wd == -1) {
       printf("wd return failure\n");
       return(EXIT_FAILURE);
@@ -219,16 +220,16 @@ int main(int argc, char* argv[]){
     	printf("stat failure");
     	exit(EXIT_FAILURE);
     }
-    
+  
 
     while(1) {
-  		x=read(fd, buffer, EVENT_BUF_LEN);
-  		if ( x < 0 ) {
+  		n=read(wd, buffer, EVENT_BUF_LEN);
+  		if ( n < 0 ) {
     		printf("read failed\n");
         	exit(EXIT_FAILURE);
   		}
       int rev_num = 1;
-      for (p = buffer; p<buffer+x; ) {
+      for (p = buffer; p<buffer+EVENT_BUF_LEN; ) {
         event = (struct inotify_event*) p;
         if ((event->mask & IN_MODIFY) != 0) {
           //MAKE ANOTHER COPY
@@ -236,13 +237,26 @@ int main(int argc, char* argv[]){
           //add 1 for each new copy of backup where
           //rename is necessary
           if (opt_t == false) {
-            dupFile = rev_rename(rev_num,optind,argv,backLocation);
+            dupFile = rev_rename(rev_num,optind,argv,backFile);
+            pathEnd=basename(dupFile);
             rev_num++;
           }
           else { //createse a new copy of back with new time stamp
-            dupFile = time_rename(optind,argv,backLocation);
+            dupFile = time_rename(optind,argv,backFile);
+            pathEnd=basename(dupFile);
           }
-
+          strcpy(backFile,backLocation);
+          strcat(backFile, pathEnd);
+          n=0;
+          while(n=read(wd,writer,50)){
+            write(x,writer,n);
+            printf("..writing..\n");
+          }
+    fflush(NULL);
+          }
+          if ((event->mask & IN_DELETE_SELF) != 0) {
+           printf("%s deleted, exiting...\n", argv[optind]);
+           exit(EXIT_SUCCESS);
           }
         }
         p += sizeof(struct inotify_event) + event->len;
