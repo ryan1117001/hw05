@@ -258,7 +258,7 @@ int main(int argc, char* argv[]){
       return EXIT_FAILURE;
     }
 
-    if(opt_m){
+    if(!opt_m){
       printf("Metdata on\n");
       timestamp(optind,argv,backFile);
       ownership(optind,argv,backFile);
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]){
           count++;
         }
         copy_file(optind,argv,backFile);
-        if (opt_m) {
+        if (!opt_m) {
           timestamp(optind,argv,backFile);
           ownership(optind,argv,backFile);
           perm(optind,argv,backFile);
