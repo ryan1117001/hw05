@@ -59,18 +59,19 @@ char* time_rename(int optind, char* argv[], char* backlocal) {
 int main(int argc, char* argv[]){
   	//argument checking and usage information
     if (argc == 1) {
-      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>", argv[0]);
+      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
       exit(EXIT_SUCCESS);
     }
     bool opt_d = false, opt_h=false, opt_t = false, opt_m = false;
   	char* backLocation=malloc(1024);
-    char* temp=getenv("HOME");
+    char* temp = getenv("HOME");
   	strcpy(backLocation, temp);
     strcat(backLocation, "/backup/");
-  printf("%s\n", backLocation );
+    printf("%s\n", backLocation );
   	int opt=0;
   	char* d_arg=NULL;
   	struct stat s;
+
   	while((opt = getopt(argc, argv, "d:htm")) != -1){
   		switch(opt) {
   			case 'd':
@@ -143,6 +144,7 @@ int main(int argc, char* argv[]){
   			exit(EXIT_FAILURE);
   		}
   	}
+
   	char* pathEnd;
     pathEnd=basename(dupFile);
     printf("%s\n", pathEnd);
@@ -163,24 +165,20 @@ int main(int argc, char* argv[]){
     	printf("failure accessing %s\n",argv[optind]);
     	exit(EXIT_FAILURE);
     }
-      char* backFile= malloc(1024);
-      strcpy(backFile, backLocation);
+      char* backFile= backLocation;
       strcat(backFile, pathEnd);
     if(stat(argv[optind], &s)==-1){
-      
-      
+      printf("stat error");
       printf("%s\n", backLocation);
       exit(EXIT_FAILURE);
-    //int t=umask(s.st_mode);
     }
-    printf("%s\n",backFile );
+    printf("%s\n",backFile);
     x=open(backFile, O_RDWR|O_CREAT , s.st_mode);
     if(x==-1){
       char* ster=strerror(errno);
     	printf("open failed%s\n", ster);
     	exit(EXIT_FAILURE);
     }
-    //printf("yah\n");
     char writer[100];
     ssize_t n;
     while(n=read(wd,writer,50)){
@@ -192,22 +190,21 @@ int main(int argc, char* argv[]){
     	printf("read/write failed");
     	exit(EXIT_FAILURE);
     }
-    time_t tmod, tstat;
-    printf("YAH");
+    time_t tmod, tstat; //modify_time, access_time
+    printf("YAH\n");
     
-    tmod=s.st_mtim.tv_sec;
-    tstat=s.st_ctim.tv_sec;
+    tmod=s.st_mtim.tv_sec; //modify time initialized
+    tstat=s.st_ctim.tv_sec; //access time initialized
     struct utimbuf buf;
     buf.modtime=tmod;
     buf.actime=tstat;
-    printf("%ld\n", buf.actime);
-	 if(utime(backFile,&buf)==-1){
-		printf("time access failure");
-		exit(EXIT_FAILURE);
+    if(utime(backFile,&buf)==-1){
+		  printf("time access failure\n");
+		  exit(EXIT_FAILURE);
     }
-	  printf("almost there");
+	  printf("almost there\n");
     if(x==-1){
-    	printf("read/write failed");
+    	printf("read/write failed\n");
     	exit(EXIT_FAILURE);
     }
     n = inotify_add_watch(fd,argv[optind], IN_MODIFY|IN_DELETE_SELF);
@@ -215,14 +212,16 @@ int main(int argc, char* argv[]){
       printf("wd return failure\n");
       return(EXIT_FAILURE);
     }
-    printf("just a bit further....");
+    printf("error\n");
+    printf("just a bit further....\n");
     if (fstat(wd, &s)<0){
-    	printf("stat failure");
+    	printf("stat failure\n");
     	exit(EXIT_FAILURE);
     }
   
 
     while(1) {
+      printf("file watch has begun\n");
   		n=read(wd, buffer, EVENT_BUF_LEN);
   		if ( n < 0 ) {
     		printf("read failed\n");
@@ -252,7 +251,7 @@ int main(int argc, char* argv[]){
             write(x,writer,n);
             printf("..writing..\n");
           }
-    fflush(NULL);
+          fflush(NULL);
           }
           if ((event->mask & IN_DELETE_SELF) != 0) {
            printf("%s deleted, exiting...\n", argv[optind]);
