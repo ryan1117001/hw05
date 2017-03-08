@@ -25,10 +25,10 @@ char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
     //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
     char* temp1 = malloc(1024);
     char* temp2 = basename(argv[optind]);
-    char countbuf[10];
+    char* countbuf= malloc(100);
     sprintf(countbuf,"%d",count);
     
-    temp1[0] = '\0';
+    //temp1[0] = '\0';
     strcat(temp1,backlocal);
     strcat(temp1,temp2);
     strcat(temp1,"_rev");
@@ -181,14 +181,7 @@ int main(int argc, char* argv[]){
     }
 
     //checking for file
-    char* dupFile = malloc(1024);
-    if(argv[optind]!=NULL){
-      dupFile = argv[optind];
-    }
-    else{
-      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
-      exit(EXIT_FAILURE);
-    }
+    
 
     //backup initials
     struct stat s;
@@ -196,7 +189,7 @@ int main(int argc, char* argv[]){
     char* temp = getenv("HOME");
     strcpy(backLocation, temp);
     strcat(backLocation, "/backup/");
-    printf("%s\n", backLocation );
+    //printf("%s\n", backLocation );
 
     //change in backup location
     if(opt_d){
@@ -226,17 +219,6 @@ int main(int argc, char* argv[]){
       return EXIT_SUCCESS;
     }
 
-    //rename file with time if true or rev if false
-    if(opt_t == true) {
-        dupFile = time_rename(optind,argv,backLocation);
-        printf("Your duplicate file is named: %s\n", dupFile);
-    }
-    if (opt_t == false) {
-        printf("Default rename will be rev\n");
-        dupFile = rev_rename(0,optind,argv,backLocation);
-        printf("Backup file name: %s\n", dupFile);
-    }
-
     //check for backup location
     if(access(backLocation, F_OK) == -1){
       if(mkdir(backLocation, S_IRWXU)==-1){
@@ -245,13 +227,31 @@ int main(int argc, char* argv[]){
       }
     }
     //name of the back up file
+
     char* pathEnd;
-    pathEnd=basename(dupFile);
-    char* backFile= backLocation;
+    char* backFile=malloc(1024);
+    if(argv[optind]!=NULL){
+      pathEnd=basename(argv[optind]);
+    }
+    else{
+      printf("Usage Information: %s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
+      exit(EXIT_FAILURE);
+    }
+    
+    backFile=strcpy(backFile, backLocation);
     strcat(backFile, pathEnd);
     //printf("%s\n",argv[optind]);
     //printf("%s\n",backFile);
-
+    if(opt_t == true) {
+        backFile = time_rename(optind,argv,backLocation);
+        printf("Your duplicate file is named: %s\n", backFile);
+    }
+    if (opt_t == false) {
+        printf("Default rename will be rev\n");
+        printf("%s\n", backLocation);
+        backFile = rev_rename(0,optind,argv,backLocation);
+        printf("Backup file name: %s\n", backFile);
+    }
     //initial copy of file
     if (copy_file(optind,argv,backFile) != 0) {
       printf("copy error\n");
@@ -302,11 +302,14 @@ int main(int argc, char* argv[]){
       }
       if ((event->mask & IN_MODIFY) != 0) {
         printf("File Modified\n");
+        printf("%s %s\n", backFile, backLocation);
         if (opt_t == true) {
+          //dupFile=strcpy(dupFile, backLocation);
           backFile = time_rename(optind, argv, backLocation);
         }
         else {
-          backFile = rev_rename(count,optind,argv,backLocation);
+          //dupFile=strcpy(dupFile, backLocation);
+          backFile = rev_rename(count,optind,argv, backLocation);
           count++;
         }
         copy_file(optind,argv,backFile);
