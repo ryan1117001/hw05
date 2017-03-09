@@ -213,6 +213,7 @@ int main(int argc, char* argv[]){
         printf("Default to %s\n", backLocation);
       }
 
+      //makes the directory if its not there
     if(access(backLocation, F_OK) == -1){
       if(mkdir(backLocation, S_IRWXU)==-1){
         printf("Cannot make directory %s\n", backLocation );
