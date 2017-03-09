@@ -200,8 +200,6 @@ int main(int argc, char* argv[]){
     char* temp = getenv("HOME");
     strcpy(backLocation, temp);
     strcat(backLocation, "/backup/");
-    //printf("%s\n", backLocation );
-
     //change in backup location
     if(opt_d){
       //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
@@ -229,7 +227,6 @@ int main(int argc, char* argv[]){
       printf("-t: appends the duplicatoin time to the file name\n-m disables metadata duplication\n");
       return EXIT_SUCCESS;
     }
-
     //check for backup location
     if(access(backLocation, F_OK) == -1){
       if(mkdir(backLocation, S_IRWXU)==-1){
@@ -254,23 +251,23 @@ int main(int argc, char* argv[]){
     //printf("%s\n",backFile);
 
     //concatenate the time to the end if true
+    printf("Backup Location: %s\n", backLocation);
     if(opt_t == true) {
         backFile = time_rename(optind,argv,backLocation);
         printf("Backup file name: %s\n", backFile);
     }
     //concatenate the rev to the end if false
     if (opt_t == false) {
-        printf("%s\n", backLocation);
         backFile = rev_rename(0,optind,argv,backLocation);
         printf("Backup file name: %s\n", backFile);
     }
+
     //initial copy of file
     //copies file and ideally returns 0 when successful
     if (copy_file(optind,argv,backFile) != 0) {
       printf("copy error\n");
       return EXIT_FAILURE;
     }
-
     //backup file exists so metadata can be copied
     if(!opt_m){ //default false, will copy metadata
       printf("Metdata on\n");
@@ -330,6 +327,7 @@ int main(int argc, char* argv[]){
           ownership(optind,argv,backFile);
           perm(optind,argv,backFile);
         }
+        printf("File has been copied\n");
       }
       p += sizeof(struct inotify_event) + event->len; //moves the buffer along
     }
