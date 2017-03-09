@@ -21,9 +21,9 @@
 #define UTIME_SIZE (sizeof (struct utimebuf))
 
 //adds _rev to create a new backfile name
+//source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
+//source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
 char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
-    //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
-    //source: stackoverflow.com/questions/5242524/converting-int-to-string-in-c
     char* temp1 = malloc(1024);
     char* temp2 = basename(argv[optind]);
     char* countbuf= malloc(100);
@@ -38,23 +38,27 @@ char* rev_rename(int count,int optind, char* argv[], char* backlocal) {
 }
 
 //adds current time to the end of file
-//source: PowerPoint Lecture 16
+//source: PowerPoint Lecture 18
+//source: https://www.epochconverter.com/program/c
 char* time_rename(int optind, char* argv[], char* backlocal) {
-    //source: http://stackoverflow.com/questions/25420933/c-create-txt-file-and-append-current-date-and-time-as-a-name
-    char* temp1;
+    //time_rename initials
+    char* temp1 = malloc(1024);
     char* temp2 = basename(argv[optind]);
-    char buffer_t[DATE_BUFFER_LEN];
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    strftime(buffer_t, DATE_BUFFER_LEN, "%Y%m%d%I%M%S", t);
-    
-    temp1= malloc(strlen(argv[optind])+strlen(buffer_t)+8);
-    temp1[0]= '\0';
-    //concatenate strings to add time
+    struct tm ts;
+    char buf[DATE_BUFFER_LEN];
+    time_t now;
+
+    //gets current time
+    time(&now);
+    ts = *localtime(&now);
+
+    //formats the time and puts it into buf
+    strftime(buf, sizeof(buf),"%Y%m%d%I%M%S",&ts);
     strcpy(temp1, backlocal);
     strcat(temp1, temp2);
     strcat(temp1, "_");
-    strcat(temp1, buffer_t);
+    strcat(temp1, buf);
+    printf("%s\n", temp1);
     return temp1;
 }
 
@@ -189,7 +193,7 @@ int main(int argc, char* argv[]){
           opt_m = true;
           break;
         default:
-          printf("Please enter options d,h,t or m.\n Option 'd' requires an argument\n");
+          printf("Please enter options d,h,t or m.\nOption 'd' requires an argument\n");
           return EXIT_SUCCESS;
       }
     }
@@ -199,22 +203,20 @@ int main(int argc, char* argv[]){
     char* backLocation=malloc(1024);
     char* temp = getenv("HOME");
     strcpy(backLocation, temp);
-    strcat(backLocation, "/backup/");
     //change in backup location
     if(opt_d){
-      //source: http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
-      //checks if d_arg path exists
-      if(access(d_arg, F_OK) != -1 ){
-        if(stat(d_arg, &s)!=-1){
-          int mt=s.st_mode;
-          if(mt& S_IFMT==S_IFDIR){
-            const char* backLocation = d_arg;
-            printf("Your backup directory is: %s\n", backLocation);
-          }
-        }
+        backLocation = d_arg;
+        strcat(backLocation,"/");
       }
-      else {
-        printf("BAD: Not a valid directory. Your backup folder will default to %s\n", backLocation);
+    else {
+        strcat(backLocation,"/backup/");
+        printf("Default to %s\n", backLocation);
+      }
+
+    if(access(backLocation, F_OK) == -1){
+      if(mkdir(backLocation, S_IRWXU)==-1){
+        printf("Cannot make directory %s\n", backLocation );
+        exit(EXIT_FAILURE);
       }
     }
 
@@ -223,16 +225,9 @@ int main(int argc, char* argv[]){
       printf("\n\nSYNOPSIS\n%s [-d file_location] [-h] [-t] [-m] <name_of_file>\n", argv[0]);
       printf("%s SOURCE_FILE\n", argv[0]);
       printf("\nDESCRIPTION\n%s accepts a file name as an argument\n", argv[0]);
-      printf("\nOPTIONS\n-d: assigns the backup file path to the 'file_location' argument string provided\n-h: prints this helpful information\n");
+      printf("\nOPTIONS\n-d: Allows for custom back up location. It will create it if not there\n-h: prints this helpful information\n");
       printf("-t: appends the duplicatoin time to the file name\n-m disables metadata duplication\n");
       return EXIT_SUCCESS;
-    }
-    //check for backup location
-    if(access(backLocation, F_OK) == -1){
-      if(mkdir(backLocation, S_IRWXU)==-1){
-        printf("Cannot make directory%s\n", backLocation );
-        exit(EXIT_FAILURE);
-      }
     }
     //naming of the back up file
     char* pathEnd;
@@ -247,11 +242,9 @@ int main(int argc, char* argv[]){
     //attaches the original file name (not path) to new backup file
     backFile=strcpy(backFile, backLocation);
     strcat(backFile, pathEnd);
-    //printf("%s\n",argv[optind]);
-    //printf("%s\n",backFile);
 
     //concatenate the time to the end if true
-    printf("Backup Location: %s\n", backLocation);
+    printf("Backup Location: %s\n", backLocation); //prints out location of backup file
     if(opt_t == true) {
         backFile = time_rename(optind,argv,backLocation);
         printf("Backup file name: %s\n", backFile);
