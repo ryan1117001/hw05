@@ -103,6 +103,7 @@ int copy_file(int optind, char* argv[], char  *copy) {
 
 //changes the time timestamp of the new file to be the same as the old
 //source: PowerPoint Lecture 16
+//https://www.ibm.com/support/knowledgecenter/ssw_i5_54/apis/utime.html
 void timestamp(int optind, char* argv[], char* copy) {
     //timestamp change initial
     time_t tmod, tstat;
@@ -213,6 +214,7 @@ int main(int argc, char* argv[]){
         printf("Default to %s\n", backLocation);
       }
 
+      //https://linux.die.net/man/2/access
       //makes the directory if its not there
     if(access(backLocation, F_OK) == -1){
       if(mkdir(backLocation, S_IRWXU)==-1){
@@ -284,6 +286,7 @@ int main(int argc, char* argv[]){
     printf("fd returned -1\n");
     return EXIT_FAILURE;
   }
+  //http://stackoverflow.com/questions/32377517/inotify-event-in-modify-occuring-twice-for-tftp-put
   //watch added on original file to see if it is deleted or written on
   wd = inotify_add_watch(fd,argv[optind], IN_DELETE_SELF | IN_CLOSE_WRITE);
   if (wd == -1) {
